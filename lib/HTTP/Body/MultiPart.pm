@@ -4,11 +4,12 @@ use strict;
 use base 'HTTP::Body';
 use bytes;
 
+use IO::File;
 use File::Temp 0.14;
 
 =head1 NAME
 
-HTTP::Body::Multipart - HTTP Body MultipartParser
+HTTP::Body::MultiPart - HTTP Body Multipart Parser
 
 =head1 SYNOPSIS
 
@@ -223,8 +224,7 @@ sub parse_body {
     if ( $index < 0 ) {
 
         # make sure we have enough buffer to detect end delimiter
-        my $length =
-          length( $self->{buffer} ) - ( length( $self->delimiter_end ) + 2 );
+        my $length = length( $self->{buffer} ) - ( length( $self->delimiter_end ) + 2 );
 
         unless ( $length > 0 ) {
             return 0;
@@ -262,7 +262,7 @@ sub handler {
         return 0;
     }
 
-    unless ( $self->{seen}->{"$part"}++ ) {
+    unless ( exists $part->{name} ) {
 
         my $disposition = $part->{headers}->{'Content-Disposition'};
         my ($name)     = $disposition =~ / name="?([^\";]+)"?/;

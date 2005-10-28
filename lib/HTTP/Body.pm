@@ -3,9 +3,8 @@ package HTTP::Body;
 use strict;
 
 use Carp       qw[ ];
-use List::Util qw[ first ];
 
-our $VERSION = '0.2';
+our $VERSION = '0.03';
 
 our $TYPES = {
     'application/octet-stream'          => 'HTTP::Body::OctetStream',
@@ -66,7 +65,13 @@ sub new {
         Carp::croak( $class, '->new( $content_type, $content_length )' );
     }
 
-    my $type = first { index( lc($content_type), $_ ) >= 0 } keys %{$TYPES};
+    my $type;
+    foreach my $supported ( keys %{$TYPES} ) {
+        if ( index( lc($content_type), $supported ) >= 0 ) {
+            $type = $supported;
+        }
+    }
+
     my $body = $TYPES->{ $type || 'application/octet-stream' };
 
     eval "require $body";
@@ -93,7 +98,7 @@ sub new {
 
 =item add
 
-Add string to itnernal buffer. Will call spin unless done. returns
+Add string to internal buffer. Will call spin unless done. returns
 length before adding self.
 
 =cut
@@ -250,6 +255,10 @@ sub upload {
 }
 
 =back
+
+=head1 BUGS
+
+Chunked requests are currently not supported.
 
 =head1 AUTHOR
 
