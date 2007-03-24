@@ -4,7 +4,7 @@ use strict;
 
 use Carp       qw[ ];
 
-our $VERSION = 0.7;
+our $VERSION = 0.8;
 
 our $TYPES = {
     'application/octet-stream'          => 'HTTP::Body::OctetStream',
@@ -49,7 +49,11 @@ HTTP::Body - HTTP Body Parser
 
 =head1 DESCRIPTION
 
-HTTP Body Parser.
+HTTP::Body parses chunks of HTTP POST data and supports 
+application/octet-stream, application/x-www-form-urlencoded, and
+multipart/form-data.
+
+It is currently used by L<Catalyst> to parse POST bodies.
 
 =head1 METHODS
 
@@ -109,17 +113,26 @@ length before adding self.
 
 sub add {
     my $self = shift;
+    
+    my $cl = $self->content_length;
 
     if ( defined $_[0] ) {
-        $self->{buffer} .= $_[0];
         $self->{length} += length( $_[0] );
+        
+        # Don't allow buffer data to exceed content-length
+        if ( $self->{length} > $cl ) {
+            $_[0] = substr $_[0], 0, $cl - $self->{length};
+            $self->{length} = $cl;
+        }
+        
+        $self->{buffer} .= $_[0];
     }
 
     unless ( $self->state eq 'done' ) {
         $self->spin;
     }
 
-    return ( $self->length - $self->content_length );
+    return ( $self->length - $cl );
 }
 
 =item body
