@@ -274,7 +274,7 @@ sub handler {
 
                 $part->{fh}       = $fh;
                 $part->{tempname} = $fh->filename;
-	        }
+            }
         }
     }
 
@@ -285,8 +285,8 @@ sub handler {
     if ( $part->{done} ) {
 
         if ( exists $part->{filename} ) {
-	        if ( $part->{filename} ne "" ) {
-                $part->{fh}->close;
+            if ( $part->{filename} ne "" ) {
+                $part->{fh}->close if defined $part->{fh};
 
                 delete @{$part}{qw[ data done fh ]};
 
