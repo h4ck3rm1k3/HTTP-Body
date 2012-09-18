@@ -1,5 +1,38 @@
 This file documents the revision history for Perl extension HTTP::Body.
 
+1.14    Tue 26 Oct 2010 19:42:00 CET
+        - removed benchmark test data and benchmark script for release (Torsten Raudssus [GETTY])
+
+1.12    Sat 19 Mar 2011 19:05:17 CET
+        - Fixed the t/08 test
+
+1.11    Tue 26 Oct 2010 14:10:00 UTC
+        - Added param_order capability (Torsten Raudssus [GETTY])
+
+1.10    Fri 8 Oct 2010 15:50:55 UTC
+        - Patch for test failure ( thanks KENTNL/MITHALDU! )
+
+1.09    Thu 19 Aug 2010 19:08:55 UTC
+        - remove blib for PAUSE indexing.
+
+1.08    Thu 19 Aug 2010 18:08:42 UTC
+        - Temp files now preserve the suffix of the uploaded file. This makes
+          it possible to feed the file directly into a mime-type-determining
+          module that may rely on this suffix as part of its heuristic. (Dave
+          Rolsky)
+        - Fix for RT#54443 Xforms buffering incorrectly (Simon Elliott)
+        - Move to Dist::Zilla
+
+1.07    2010-01-24 20:40:00
+        - Up IO::File dependency.
+
+1.06    2010-01-09 19:21:00
+        - Added $body->cleanup(1) flag to enable auto-deletion of temporary files
+          during DESTROY. (Vany Serezhkin)
+        - Fixed parsing of multipart bodies with boundaries that contain commas.
+          (Tomas Doran, http://rt.cpan.org/Public/Bug/Display.html?id=41407)
+        - Dropped YAML, we now use Perl as a serialization format in our tests. We call this PAML ;)
+
 1.05    2008-12-01 17:15:00
         - Removed useless eval + require in new().
 

@@ -3,21 +3,24 @@
 use strict;
 use warnings;
 
-use Test::More tests => 12;
+use FindBin;
+use lib "$FindBin::Bin/lib";
+
+use Test::More tests => 14;
 
 use Cwd;
 use HTTP::Body;
 use File::Spec::Functions;
 use IO::File;
-use YAML;
+use PAML;
 
 my $path = catdir( getcwd(), 't', 'data', 'xforms' );
 
 for ( my $i = 1; $i <= 2; $i++ ) {
 
     my $test    = sprintf( "%.3d", $i );
-    my $headers = YAML::LoadFile( catfile( $path, "$test-headers.yml" ) );
-    my $results = YAML::LoadFile( catfile( $path, "$test-results.yml" ) );
+    my $headers = PAML::LoadFile( catfile( $path, "$test-headers.pml" ) );
+    my $results = PAML::LoadFile( catfile( $path, "$test-results.pml" ) );
     my $content = IO::File->new( catfile( $path, "$test-content.dat" ) );
     my $body    = HTTP::Body->new( $headers->{'Content-Type'}, $headers->{'Content-Length'} );
 
@@ -41,6 +44,7 @@ for ( my $i = 1; $i <= 2; $i++ ) {
 
     is_deeply( $body->body, $results->{body}, "$test XForms body" );
     is_deeply( $body->param, $results->{param}, "$test XForms param" );
+	is_deeply( $body->param_order, $results->{param_order} ? $results->{param_order} : [], "$test XForms param_order" );
     is_deeply( $body->upload, $results->{upload}, "$test XForms upload" );
     if ( $body->isa('HTTP::Body::XFormsMultipart') ) {
         cmp_ok( $body->start, 'eq', $results->{start}, "$test XForms start" );

@@ -3,22 +3,26 @@
 use strict;
 use warnings;
 
-use Test::More tests => 98;
+use FindBin;
+use lib "$FindBin::Bin/lib";
+
+use Test::More tests => 153;
+use Test::Deep;
 
 use Cwd;
 use HTTP::Body;
 use File::Spec::Functions;
 use IO::File;
-use YAML;
+use PAML;
 use File::Temp qw/ tempdir /;
 
 my $path = catdir( getcwd(), 't', 'data', 'multipart' );
 
-for ( my $i = 1; $i <= 12; $i++ ) {
+for ( my $i = 1; $i <= 13; $i++ ) {
 
     my $test    = sprintf( "%.3d", $i );
-    my $headers = YAML::LoadFile( catfile( $path, "$test-headers.yml" ) );
-    my $results = YAML::LoadFile( catfile( $path, "$test-results.yml" ) );
+    my $headers = PAML::LoadFile( catfile( $path, "$test-headers.pml" ) );
+    my $results = PAML::LoadFile( catfile( $path, "$test-results.pml" ) );
     my $content = IO::File->new( catfile( $path, "$test-content.dat" ) );
     my $body    = HTTP::Body->new( $headers->{'Content-Type'}, $headers->{'Content-Length'} );
     my $tempdir = tempdir( 'XXXXXXX', CLEANUP => 1, DIR => File::Spec->tmpdir() );
@@ -32,6 +36,11 @@ for ( my $i = 1; $i <= 12; $i++ ) {
         $body->add($buffer);
     }
     
+    # Tests >= 10 use auto-cleanup
+    if ( $i >= 10 ) {
+        $body->cleanup(1);
+    }
+    
     # Save tempnames for later deletion
     my @temps;
     
@@ -41,16 +50,38 @@ for ( my $i = 1; $i <= 12; $i++ ) {
 
         for ( ( ref($value) eq 'ARRAY' ) ? @{$value} : $value ) {
             like($_->{tempname}, qr{$regex_tempdir}, "has tmpdir $tempdir");
-            push @temps, delete $_->{tempname};
+            push @temps, $_->{tempname};
+        }
+        
+        # Tell Test::Deep to ignore tempname values
+        if ( ref $value eq 'ARRAY' ) {
+            for ( @{ $results->{upload}->{$field} } ) {
+                $_->{tempname} = ignore();
+            }
+        }
+        else {
+            $results->{upload}->{$field}->{tempname} = ignore();
         }
     }
-
-    is_deeply( $body->body, $results->{body}, "$test MultiPart body" );
-    is_deeply( $body->param, $results->{param}, "$test MultiPart param" );
-    is_deeply( $body->upload, $results->{upload}, "$test MultiPart upload" );
+	
+    cmp_deeply( $body->body, $results->{body}, "$test MultiPart body" );
+    cmp_deeply( $body->param, $results->{param}, "$test MultiPart param" );
+    cmp_deeply( $body->param_order, $results->{param_order} ? $results->{param_order} : [], "$test MultiPart param_order" );
+    cmp_deeply( $body->upload, $results->{upload}, "$test MultiPart upload" )
+        if $results->{upload};
     cmp_ok( $body->state, 'eq', 'done', "$test MultiPart state" );
     cmp_ok( $body->length, '==', $body->content_length, "$test MultiPart length" );
     
-    # Clean up temp files created
-    unlink map { $_ } grep { -e $_ } @temps;
-}
+    if ( $i < 10 ) {
+        # Clean up temp files created
+        unlink map { $_ } grep { -e $_ } @temps;
+    }
+    
+    undef $body;
+    
+    # Ensure temp files were deleted
+    for my $temp ( @temps ) {
+        ok( !-e $temp, "Temp file $temp was deleted" );
+    }
+
+} 

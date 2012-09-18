@@ -3,22 +3,25 @@
 use strict;
 use warnings;
 
-use Test::More tests => 31;
+use FindBin;
+use lib "$FindBin::Bin/lib";
+
+use Test::More tests => 37;
 
 use Cwd;
 use Digest::MD5 qw(md5_hex);
 use HTTP::Body;
 use File::Spec::Functions;
 use IO::File;
-use YAML;
+use PAML;
 
 my $path = catdir( getcwd(), 't', 'data', 'urlencoded' );
 
 for ( my $i = 1; $i <= 6; $i++ ) {
 
     my $test    = sprintf( "%.3d", $i );
-    my $headers = YAML::LoadFile( catfile( $path, "$test-headers.yml" ) );
-    my $results = YAML::LoadFile( catfile( $path, "$test-results.yml" ) );
+    my $headers = PAML::LoadFile( catfile( $path, "$test-headers.pml" ) );
+    my $results = PAML::LoadFile( catfile( $path, "$test-results.pml" ) );
     my $content = IO::File->new( catfile( $path, "$test-content.dat" ) );
     my $body    = HTTP::Body->new( $headers->{'Content-Type'}, $headers->{'Content-Length'} );
 
@@ -30,6 +33,7 @@ for ( my $i = 1; $i <= 6; $i++ ) {
 
     is_deeply( $body->body, $results->{body}, "$test UrlEncoded body" );
     is_deeply( $body->param, $results->{param}, "$test UrlEncoded param" );
+	is_deeply( $body->param_order, $results->{param_order} ? $results->{param_order} : [], "$test UrlEncoded param_order" );
     is_deeply( $body->upload, $results->{upload}, "$test UrlEncoded upload" );
     cmp_ok( $body->state, 'eq', 'done', "$test UrlEncoded state" );
     cmp_ok( $body->length, '==', $body->content_length, "$test UrlEncoded length" );
