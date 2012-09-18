@@ -3,6 +3,7 @@ package HTTP::Body::OctetStream;
   $HTTP::Body::OctetStream::VERSION = '1.15';
 }
 
+
 use strict;
 use base 'HTTP::Body';
 use bytes;
