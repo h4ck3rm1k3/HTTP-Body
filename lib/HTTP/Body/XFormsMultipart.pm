@@ -7,7 +7,7 @@ package HTTP::Body::XFormsMultipart;
 use strict;
 use base 'HTTP::Body::MultiPart';
 use bytes;
-
+use Data::Dumper;
 use IO::File;
 use File::Temp 0.14;
 
@@ -44,13 +44,14 @@ sub init {
     $self->SUPER::init(@_);
     unless ( $self->content_type =~ /start=\"?\<?([^\"\>;,]+)\>?\"?/ ) {
         my $content_type = $self->content_type;
-        my $content = $self->content;
-        warn "content_type:$content_type";
-        warn "content:$content";
-        Carp::croak( "Invalid boundary in content_type: '$content_type'" );
+        $self->{start} =  "__NONE__";
+    #    Carp::croak( "Invalid boundary in content_type: '$content_type'" );
     }
-    
-    $self->{start} = $1;
+    else
+    {
+        #multipart/related; boundary=----------SFP876ns5iH3IQ3gRB2L4sYkgqXvTUcth0zo6mfBSuCkLGRmRR5TKbC 
+        $self->{start} = $1;
+    }
 
     return $self;
 }
@@ -75,22 +76,42 @@ set as the XForms:Model param if its content type is application/xml.
 sub handler {
     my ( $self, $part ) = @_;
 
-    my $contentid = $part->{headers}{'Content-ID'};
-    $contentid =~ s/^.*[\<\"]//;
-    $contentid =~ s/[\>\"].*$//;
-    
-    if ( $contentid eq $self->start ) {
-        $part->{name} = 'XForms:Model';
+    my $cd= $part->{headers}{'Content-Disposition'};
+    #=> 'form-data; name="photo"; filename="DSCI0001.jpg"'
+    if ($cd)  {
         if ($part->{done}) {
+
+
+            if ($cd =~ /filename=\"([\"]+)\"/)  {
+                $part->{filename} = $1;
+            }
+            if ($cd =~ /name=\"([\"]+)\"/)  {
+                $part->{name} = $1;
+            }
+            $part->{name} = 'XForms:Model';
             $self->body($part->{data});
         }
-    }
-    elsif ( defined $contentid ) {
-        $part->{name}     = $contentid;
-        $part->{filename} = $contentid;
-    }
+        return $self->SUPER::handler($part);
 
-    return $self->SUPER::handler($part);
+    }
+    else
+    {
+        my $contentid = $part->{headers}{'Content-ID'} || "";
+        $contentid =~ s/^.*[\<\"]//;
+        $contentid =~ s/[\>\"].*$//;
+        if ( $contentid eq $self->start ) {
+            $part->{name} = 'XForms:Model';
+            if ($part->{done}) {
+                $self->body($part->{data});
+            }
+        }
+        elsif ( defined $contentid ) {
+            $part->{name}     = $contentid;
+            $part->{filename} = $contentid;
+        }
+        
+        return $self->SUPER::handler($part);
+    }
 }
 
 =back
