@@ -1,10 +1,7 @@
 package HTTP::Body;
-<<<<<<< HEAD
 {
   $HTTP::Body::VERSION = '1.15';
 }
-=======
->>>>>>> 557aefbb72ae030e28d7e5b676450071b605399d
 
 use strict;
 

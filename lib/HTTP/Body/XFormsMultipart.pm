@@ -44,6 +44,9 @@ sub init {
     $self->SUPER::init(@_);
     unless ( $self->content_type =~ /start=\"?\<?([^\"\>;,]+)\>?\"?/ ) {
         my $content_type = $self->content_type;
+        my $content = $self->content;
+        warn "content_type:$content_type";
+        warn "content:$content";
         Carp::croak( "Invalid boundary in content_type: '$content_type'" );
     }
     
